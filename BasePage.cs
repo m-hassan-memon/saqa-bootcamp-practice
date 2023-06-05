@@ -1,9 +1,7 @@
-using AventStack.ExtentReports;
-using AventStack.ExtentReports.Reporter;
-using AventStack.ExtentReports.Reporter.Configuration;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using OpenQA.Selenium;
+﻿using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Edge;
+using OpenQA.Selenium.Firefox;
 using OpenQA.Selenium.Support.UI;
 using System;
 using System.Collections.Generic;
@@ -11,167 +9,120 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
-using static System.Net.Mime.MediaTypeNames;
+
 
 namespace POM
 {
     public class BasePage
     {
-        public static IWebDriver driver;
-        public static ExtentReports extentReports;
-        public static ExtentTest exParentTest;
-        public static ExtentTest exChildTest;
-        public static string dirpath = "C:\\ExtentReports\\" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + "\\";
+        public static IWebDriver driver = null;
 
 
-        public static void LogReport(string testcase)
-        {
-            ExtentHtmlReporter htmlReporter = new ExtentHtmlReporter(dirpath);
-
-            #region ABC
-            htmlReporter.Config.DocumentTitle = "Automation Testing Report";
-            //htmlReporter.Config.ReportName = "SQA 9 Bootcamp " + DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            htmlReporter.Config.Theme = Theme.Standard;
-
-            extentReports = new ExtentReports();
-            extentReports.AttachReporter(htmlReporter);
-
-            extentReports.AddSystemInfo("AUT", "Hotel Adactin");
-            extentReports.AddSystemInfo("Environment", "QA");
-            extentReports.AddSystemInfo("Machine", Environment.MachineName);
-            extentReports.AddSystemInfo("OS", Environment.OSVersion.VersionString);
-            #endregion
-        }
-        public void NodeCreation(string methodname)
-        {
-            exChildTest = exParentTest.CreateNode(methodname);
-        }
-        public static void TakeScreenshot(Status status, string stepDetail)
-        {
-            string path = dirpath + "TestExcelLog_" + DateTime.Now.ToString("yyyyMMddHHmmss");
-            Screenshot image = ((ITakesScreenshot)driver).GetScreenshot();
-            image.SaveAsFile(path + ".png", ScreenshotImageFormat.Png);
-            BasePage.exChildTest.Log(status, stepDetail, MediaEntityBuilder.CreateScreenCaptureFromPath(path + ".png").Build());
-        }
-        public static void ExtentFlush()
-        {
-            extentReports.Flush();
-        }
-        public void InitializeChrome()
+        #region Browsers 
+        public IWebDriver chromeOpen()
         {
             driver = new ChromeDriver();
             driver.Manage().Window.Maximize();
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(60);
-        }
-        public void EnterText(By by, string value)
-        {
-            try
-            {
-                driver.FindElement(by).SendKeys(value);
-                TakeScreenshot(Status.Pass, "Text Written on " + by + " this locator and value : " + value);
-            }
-            catch (Exception ex)
-            {
-                TakeScreenshot(Status.Fail, "Enter Text Failed : " + ex.ToString());
-            }
-
+            return driver;
         }
 
-        public void MoveToNewWindow(int i)
+        
+        public IWebDriver firefoxOpen()
         {
-            var handlers = driver.WindowHandles;
-
-            driver.SwitchTo().Window(handlers[i]);
+            driver = new FirefoxDriver();
+            driver.Manage().Window.Maximize();
+            return driver;
         }
 
-        public void MoveToNewTab(int i)
+        
+        public IWebDriver edgeOpen()
         {
-            var handlers = driver.WindowHandles;
-
-            driver.SwitchTo().Window(handlers[i]);
+            driver = new EdgeDriver();
+            driver.Manage().Window.Maximize();
+            return driver;
         }
 
-        public void DropDownTXT(By locator, string text)
+        public void driverClose()
         {
-            var select = driver.FindElement(locator);
-            var dropDown = new SelectElement(select);
-
-            dropDown.SelectByText(text);
+            driver.Close();
         }
         
-        public void DropDownValue(By locator, string value)
+        public void driverQuit()
         {
-            var select = driver.FindElement(locator);
-            var dropDown = new SelectElement(select);
-
-            dropDown.SelectByValue(value);
-        }
-        public void DropDownIndex(By locator, int i)
-        {
-            var select = driver.FindElement(locator);
-            var dropDown = new SelectElement(select);
-
-            dropDown.SelectByIndex(i);
+            driver.Quit();
         }
 
-        public void Clear(By by)
+        public void maximizeBrowser()
         {
-            driver.FindElement(by).Clear();
+            driver.Manage().Window.Maximize();
+
         }
-        public void Click(By by)
+
+        public void minimizeBrowser()
         {
-            try
-            {
-                driver.FindElement(by).Click();
-                TakeScreenshot(Status.Pass, "Click on " + by);
-            }
-            catch (Exception ex)
-            {
-                TakeScreenshot(Status.Fail, "Click Failed : " + ex.ToString());
-            }
+            driver.Manage().Window.Minimize();
+
         }
-        public void OpenUrl(string url)
+        #endregion
+
+        #region web elements methods
+
+        #region public methods
+
+        public void Element(By by)
         {
-            try
-            {
-                driver.Url = url;
-                TakeScreenshot(Status.Pass, "URL Open");
-            }
-            catch (Exception ex)
-            {
-                TakeScreenshot(Status.Fail, "This Site can't be reached");
-            }
+            driver.FindElement(by);
         }
-        public string GetElementText(By by)
+
+        public void Write(By locator, string value)
+        {
+
+            driver.FindElement(locator).SendKeys(value);
+
+        }
+
+        public void Click(By locator)
+        {
+            driver.FindElement(locator).Click();
+        }
+
+        public void Clear(By locator)
+        {
+            driver.FindElement(locator).Clear();
+        }
+
+        public void GoToURL(string url)
+        {
+            driver.Url = url;
+        }
+
+        public string GetElementText(By locator)
         {
             string text;
             try
             {
-                text = driver.FindElement(by).Text;
+                text = driver.FindElement(locator).Text;
             }
             catch
             {
                 try
                 {
-                    text = driver.FindElement(by).GetAttribute("value");
+                    text = driver.FindElement(locator).GetAttribute("value");
                 }
-                catch
+                catch 
                 {
-                    text = driver.FindElement(by).GetAttribute("innerHTML");
+                    text = driver.FindElement(locator).GetAttribute("innerHTML");
                 }
             }
+
             return text;
         }
-        public string GetElementState(By by)
+        
+        public string GetElementState(By locator)
         {
-            string elementState = driver.FindElement(by).GetAttribute("Disabled");
-
+            string elementState = driver.FindElement(locator).GetAttribute("Disabled");
+            
             if (elementState == null)
-            {
-                elementState = "enabled";
-            }
-            else if (elementState == "false")
             {
                 elementState = "enabled";
             }
@@ -179,55 +130,122 @@ namespace POM
             {
                 elementState = "disabled";
             }
+
             return elementState;
         }
-        public static string ExecuteJavaScriptCode(string javascriptCode)
+
+        public void PlaybackWait(int  milliseconds)
+        {
+            Thread.Sleep(milliseconds);
+        }
+
+        public static string ExecuteJSCode(string jsCode)
         {
             string value = null;
+
             try
             {
                 IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
-                value = (string)js.ExecuteScript(javascriptCode);
+                value = (string)js.ExecuteScript(jsCode);
             }
+
             catch (Exception)
             {
 
             }
+
             return value;
         }
-        public static void ThreadSleepWait(int seconds)
+        #endregion public
+
+        #region private methods
+
+        private bool IsElementTxtField(By locators)
         {
-            //Mili Seconds = 
+            try
+            {
+                bool resultText = Convert.ToBoolean(driver.FindElement(locators).GetAttribute("type").Equals("text"));
 
-            Thread.Sleep(seconds * 1000);
+                bool resultPassword = Convert.ToBoolean(driver.FindElement(locators).GetAttribute("type").Equals("password")); 
+                
+                if (resultText == true || resultPassword == true) 
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            catch
+            {
+                return false;
+            }
         }
-        public void QuitChrome()
+
+
+        
+        // is page ready, visible, clickable methods to be written here
+        
+        private bool IsPageReady(IWebDriver driver)
         {
-            driver.Quit();
+            return ((IJavaScriptExecutor)driver)
+                .ExecuteScript("return document.readystate").Equals("complete");
+        }
+        
+        private bool IsElementVisible(By by)
+        {
+            if (driver.FindElement(by).Displayed || driver.FindElement(by).Enabled)
+            {
+                return true;
+            }
+            else
+            { 
+                return false; 
+            }
         }
 
-        //Capture Screenshot
-        //Click using JS
-        //Enter Test using JS
-        //Implicit Wait
-        //Scroll Down
-        //Scroll Up
-        //Scroll to Element
-        //Drop Down 
-        //Radio Button
-        //Check Box (if disabled/enabled)
-        //iframes
-        //IAlerts (All 3 Types)
-        //Window Handle (New Window, New Tab)
-        //Assertion (Maximum)
-        //Read CSV
-        //Read XML
-        //Multiple Browsers
-        //Browser Options
+        public bool IsElementClickable(By by)
+        {
+            if (driver.FindElement(by).Displayed && driver.FindElement(by).Enabled)
+            {
 
-        //To-Do (Monday)
-        //Report (Extent)
-        //Log
-        //
+                return true;
+            }
+            else
+            { 
+                return false; 
+            }
+        }
+     
+        private IWebElement WaitForElement(By locators, int waitTimeforElement = 0)
+        {
+            IWebElement element = null;
+
+            try
+            {
+                if(waitTimeforElement != 0 && waitTimeforElement.ToString() != null)
+                {
+                    PlaybackWait(waitTimeforElement * 1000);
+                }
+
+                element = driver.FindElement(locators);
+            }
+
+            catch 
+            {
+                WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(60));
+                wait.Until(driver => IsPageReady(driver) == true && IsElementVisible(locators) == true && IsElementClickable(locators) == true);
+
+                element = driver.FindElement(locators);
+            }
+
+            return element;
+        }
+
+        #endregion
+        
+        #endregion
     }
 }
